@@ -155,6 +155,7 @@ void forward_gru_layer(layer l, network net)
         s.input = l.state;
         forward_connected_layer(wz, s);
         forward_connected_layer(wr, s);
+		forward_connected_layer(wh, s);
 
         s.input = net.input;
         forward_connected_layer(uz, s);
@@ -171,14 +172,12 @@ void forward_gru_layer(layer l, network net)
         activate_array(l.z_cpu, l.outputs*l.batch, LOGISTIC);
         activate_array(l.r_cpu, l.outputs*l.batch, LOGISTIC);
 
-        copy_cpu(l.outputs*l.batch, l.state, 1, l.forgot_state, 1);
+        copy_cpu(l.outputs*l.batch, wh.output, 1, l.forgot_state, 1);
         mul_cpu(l.outputs*l.batch, l.r_cpu, 1, l.forgot_state, 1);
 
-        s.input = l.forgot_state;
-        forward_connected_layer(wh, s);
-
         copy_cpu(l.outputs*l.batch, uh.output, 1, l.h_cpu, 1);
-        axpy_cpu(l.outputs*l.batch, 1, wh.output, 1, l.h_cpu, 1);
+        axpy_cpu(l.outputs*l.batch, 1, l.forgot_state, 1, l.h_cpu, 1);
+
 
         if(l.tanh){
             activate_array(l.h_cpu, l.outputs*l.batch, TANH);
@@ -256,6 +255,7 @@ void forward_gru_layer_gpu(layer l, network net)
         s.input_gpu = l.state_gpu;
         forward_connected_layer_gpu(wz, s);
         forward_connected_layer_gpu(wr, s);
+		forward_connected_layer_gpu(wh, s);
 
         s.input_gpu = net.input_gpu;
         forward_connected_layer_gpu(uz, s);
@@ -271,14 +271,11 @@ void forward_gru_layer_gpu(layer l, network net)
         activate_array_gpu(l.z_gpu, l.outputs*l.batch, LOGISTIC);
         activate_array_gpu(l.r_gpu, l.outputs*l.batch, LOGISTIC);
 
-        copy_gpu(l.outputs*l.batch, l.state_gpu, 1, l.forgot_state_gpu, 1);
-        mul_gpu(l.outputs*l.batch, l.r_gpu, 1, l.forgot_state_gpu, 1);
-
-        s.input_gpu = l.forgot_state_gpu;
-        forward_connected_layer_gpu(wh, s);
+        copy_gpu(l.outputs*l.batch, wh.output_gpu, 1, l.forgot_state_gpu, 1);
+        mul_gpu(l.outputs*l.batch, l.r_gpu, 1, l.forgot_state_gpu, 1);        
 
         copy_gpu(l.outputs*l.batch, uh.output_gpu, 1, l.h_gpu, 1);
-        axpy_gpu(l.outputs*l.batch, 1, wh.output_gpu, 1, l.h_gpu, 1);
+        axpy_gpu(l.outputs*l.batch, 1, l.forgot_state_gpu, 1, l.h_gpu, 1);
 
         if(l.tanh){
             activate_array_gpu(l.h_gpu, l.outputs*l.batch, TANH);
